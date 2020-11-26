@@ -187,13 +187,13 @@ function App() {
         if(!formValue[key]) delete formValue[key];
       });
 
-      let txn;
+      let txn: any;
 
       if(txType === 'payment tx') txn = await preparePaymentTx(formValue);
+      else if(txType === 'key reg tx') txn = await prepareKeyRegTx(formValue);
       else if(txType === 'asset config tx') txn = await prepareAssetConfigTx(formValue);
       else if(txType === 'asset transfer tx') txn = await prepareAssetTransferTx(formValue);
       else if(txType === 'asset freeze tx') txn = await prepareAssetFreezeTx(formValue);
-      else if(txType === 'key reg tx') txn = prepareKeyRegTx(formValue);
 
 
       // let txn = algosdk.makePaymentTxnWithSuggestedParams(selectedWallet, receiverAddress, (amount as number)*1000000, undefined, undefined, params);

@@ -1,25 +1,507 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect, useState } from 'react';
+import { MyAlgoWallet, SignedTx } from 'wallet-myalgo-js';
+import { useForm } from "react-hook-form";
+
+
+import algosdk from 'algosdk';
+
+
+const algodClient = new algosdk.Algodv2('', 'https://api.testnet.algoexplorer.io', '');
+const myAlgoWallet = new MyAlgoWallet('https://dev.myalgo.com/bridge');
+
+
+
+const txTypeOpts = [
+  {value: 'payment tx', name: 'Payment Transaction'},
+  {value: 'key reg tx', name: 'Key Registration Transaction'},
+  {value: 'asset config tx', name: 'Asset Configuration Transaction'},
+  {value: 'asset transfer tx', name: 'Asset Transfer Transaction'},
+  {value: 'asset freeze tx', name: 'Asset Freeze Transaction'},
+];
+
+
 
 function App() {
+
+  const { register, handleSubmit } = useForm();
+  
+  const [wallets, setWallets] = useState<string[]>();
+  const [selectedWallet, setSelectedWallet] = useState<string>();
+
+  const [balance, setBalance] = useState<number>();
+  const [txType, setTxType] = useState<'payment tx' | 'key reg tx' | 'asset config tx' | 'asset transfer tx' | 'asset freeze tx'>('payment tx');
+
+
+
+  useEffect(() => {
+    (async () => {
+
+      let accountInfo = await algodClient.accountInformation(selectedWallet).do();
+      console.log(accountInfo);
+
+      const _balance = accountInfo.amount;
+      setBalance(_balance);
+
+    })();
+  }, [selectedWallet]);
+
+  
+  
+  const connectToMyAlgo = async() => {
+    try {
+      const accounts = await myAlgoWallet.connect();
+      console.log(accounts);
+
+      const _wallets = accounts.map(account => account.address);
+  
+      setWallets(_wallets);
+      setSelectedWallet(_wallets[0]);
+
+      
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  
+
+  const preparePaymentTx = async(formValue) => {
+    // let myAccount = algosdk.mnemonicToSecretKey('escape auto cool oil spy trap decrease doctor carbon wet token analyst stand rebuild drum mouse response track novel demand discover step hire able tissue');
+    // console.log('myAccount:', myAccount);
+      let txn = await algodClient.getTransactionParams().do();
+  
+      txn = {
+      ...txn,
+      ...formValue,
+      fee: 1000,
+      flatFee: true,
+      from: selectedWallet,
+      type: 'pay',
+      amount: +formValue.amount*1000000,
+      note: undefined
+    };
+
+    return txn;
+  }
+
+
+  const prepareKeyRegTx = async(formValue) => {
+    let txn = await algodClient.getTransactionParams().do();
+
+    txn = {
+      ...txn,
+      ...formValue,
+        fee: 1000,
+        flatFee: true,
+        from: selectedWallet,
+        type: 'keyreg',
+        voteFirst: +formValue.voteFirst,
+        voteLast: +formValue.voteLast,
+        voteKeyDilution: +formValue.voteKeyDilution,
+        note: undefined
+    };
+
+    return txn;
+  }
+
+
+  const prepareAssetConfigTx = async(formValue) => {
+    let txn = await algodClient.getTransactionParams().do();
+
+    txn = {
+      ...txn,
+      ...formValue,
+        fee: 1000,
+        flatFee: true,
+        from: selectedWallet,
+        type: 'acfg',
+        assetDecimals: +formValue.assetDecimals,
+        assetTotal: +formValue.assetTotal,
+        // assetTotal: formValue.assetTotal*(10**formValue.assetDecimals),
+        note: undefined
+    };
+
+
+    // txn.fee = 1000;
+    // txn.flatFee = true;
+    // txn.from = selectedWallet;
+    
+    // txn.type = 'acfg';
+    // txn.assetDecimals = 2;
+    // txn.assetTotal = 500000*(10**txn.assetDecimals);
+    // txn.assetName = 'My New Coin';
+    // txn.assetUnitName = 'MNC';
+    // txn.assetURL = 'developer.algorand.org';
+    // txn.assetClawback = selectedWallet;
+    // txn.assetFreeze = selectedWallet;
+    // txn.assetManager = selectedWallet;
+    // txn.assetReserve = selectedWallet;
+    // txn.assetDefaultFrozen = false;
+
+    return txn;
+  }
+
+
+  const prepareAssetTransferTx = async(formValue) => {
+    let txn = await algodClient.getTransactionParams().do();
+
+    txn = {
+      ...txn,
+      ...formValue,
+        fee: 1000,
+        flatFee: true,
+        from: selectedWallet,
+        type: 'axfer',
+        amount: +formValue.amount,
+        assetIndex: +formValue.assetIndex,
+        note: undefined
+    };
+
+    return txn;
+  }
+
+
+  const prepareAssetFreezeTx = async(formValue) => {
+    let txn = await algodClient.getTransactionParams().do();
+
+    txn = {
+      ...txn,
+      ...formValue,
+        fee: 1000,
+        flatFee: true,
+        from: selectedWallet,
+        type: 'afrz',
+        assetIndex: +formValue.assetIndex,
+        note: undefined
+    };
+
+    return txn;
+  }
+
+
+
+  const sendTx = async(formValue) => {
+    try {
+
+      Object.keys(formValue).forEach(key => {
+        if(!formValue[key]) delete formValue[key];
+      });
+
+      let txn;
+
+      if(txType === 'payment tx') txn = await preparePaymentTx(formValue);
+      else if(txType === 'asset config tx') txn = await prepareAssetConfigTx(formValue);
+      else if(txType === 'asset transfer tx') txn = await prepareAssetTransferTx(formValue);
+      else if(txType === 'asset freeze tx') txn = await prepareAssetFreezeTx(formValue);
+      else if(txType === 'key reg tx') txn = prepareKeyRegTx(formValue);
+
+
+      // let txn = algosdk.makePaymentTxnWithSuggestedParams(selectedWallet, receiverAddress, (amount as number)*1000000, undefined, undefined, params);
+      // console.log('txn:', txn);
+    
+
+      let signedTxn = (await myAlgoWallet.signTransaction(txn)) as SignedTx;
+      // let signedTxn = txn.signTxn(myAccount.sk);
+      // let signedTxn = (await algosdk.signTransaction(txn, myAccount.sk)).blob;
+      console.log('signedTxn:', signedTxn);
+
+      // let txId = txn.txID().toString();
+      // console.log("Signed transaction with txID: %s", txId);
+
+      const raw = await algodClient.sendRawTransaction(signedTxn.blob).do();
+      console.log('raw:',raw);
+
+      waitForConfirmation(signedTxn.txID);
+
+
+      
+    } catch (err) {
+      console.error(err); 
+    }
+  }
+
+
+
+  const waitForConfirmation = async (txId) => {
+    let status = (await algodClient.status().do());
+    let lastRound = status["last-round"];
+    while (true) {
+        const pendingInfo = await algodClient.pendingTransactionInformation(txId).do();
+        console.log('pendingInfo:', pendingInfo);
+
+        if (pendingInfo["confirmed-round"] !== null && pendingInfo["confirmed-round"] > 0) {
+            //Got the completed Transaction
+            console.log("Transaction " + txId + " confirmed in round " + pendingInfo["confirmed-round"]);
+            break;
+        }
+        lastRound++;
+        await algodClient.statusAfterBlock(lastRound).do();
+    }
+  }
+
+
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+
+      <h1 className="my-5" style={{textAlign: 'center'}}>Algorand Tests</h1>
+
+      <div style={{textAlign: 'center'}}>
+        {!wallets && 
+        <div className="row justify-content-center no-gutters">
+          <div className="col-6">
+            <button className="btn btn-warning text-light btn-lg btn-block" onClick={connectToMyAlgo}>
+              Connect to My Algo
+            </button>
+          </div>
+        </div>
+        }
+
+        {wallets && 
+
+          <>
+
+              <div className="row justify-content-center no-gutters">
+                <div className="col-6">
+                  <div className="form-group row">
+                    <label className="col-sm-4" htmlFor="wallets-options">Select Account</label>
+                    <select className="form-control col-sm-8" name="wallets-options" id="wallets-options" value={selectedWallet} onChange={(e) => setSelectedWallet(e.target.value)}>
+                      {wallets.map(wallet => (
+                        <option key={wallet} value={wallet}>{wallet}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+
+            {balance && 
+              <div className="row justify-content-center no-gutters mt-3">
+                <div className="col-6">
+                    <h3>Balance: {balance/1000000} Algos</h3>
+                </div>
+              </div>
+            }
+
+
+            <br/>
+
+            <div className="row justify-content-center no-gutters">
+              <div className="col-6">
+                <div className="form-group row">
+                  <label className="col-sm-4" htmlFor="tx-options">Select Transaction Type</label>
+                  <select className="form-control col-sm-8" name="tx-options" id="tx-options" value={txType} onChange={(e) => setTxType(e.target.value as any)}>
+                    {txTypeOpts.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+              
+            <div className="row justify-content-center no-gutters">
+              <div className="col-6">
+                <div className="card">
+                  <div className="card-body">
+                    <form autoComplete="off" onSubmit={handleSubmit(sendTx)}>
+                      {txType === 'payment tx' && 
+                        <>
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="input1">To</label>
+                            <input className="form-control col-sm-8" type="text" id="input1" name="to" ref={register}/>
+                          </div>
+                          
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="input2">Amount</label>
+                            <input className="form-control col-sm-8" type="number" id="input2" name="amount" ref={register}/>
+                          </div>
+
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="input3">Note (optional)</label>
+                            <textarea className="form-control col-sm-8" id="input3" name="note" ref={register}></textarea>
+                          </div>
+                        </>
+                      }
+
+                      {txType === 'key reg tx' && 
+                        <>
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="voteKey">Vote Key</label>
+                            <input className="form-control col-sm-8" type="text" id="voteKey" name="voteKey" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="selectionKey">Selection Key</label>
+                            <input className="form-control col-sm-8" type="text" id="selectionKey" name="selectionKey" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="voteFirst">Vote First Valid Round</label>
+                            <input className="form-control col-sm-8" type="number" id="voteFirst" name="voteFirst" ref={register}/>
+                          </div>
+
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="voteLast">Vote Last Valid Round</label>
+                            <input className="form-control col-sm-8" type="number" id="voteLast" name="voteLast" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="voteKeyDilution">Vote Key Dilution</label>
+                            <input className="form-control col-sm-8" type="number" id="voteKeyDilution" name="voteKeyDilution" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="note">Note (optional)</label>
+                            <textarea className="form-control col-sm-8" id="note" name="note" ref={register}></textarea>
+                          </div>
+                        </>
+
+                      }
+
+                      {txType === 'asset config tx' && 
+                        <>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="input4">Name</label>
+                            <input className="form-control col-sm-8" type="text" id="input4" name="assetName" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="input5">Symbol</label>
+                            <input className="form-control col-sm-8" type="text" id="input5" name="assetUnitName" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="input6">Decimals</label>
+                            <input className="form-control col-sm-8" type="number" id="input6" name="assetDecimals" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="input7">Total Supply</label>
+                            <input className="form-control col-sm-8" type="number" id="input7" name="assetTotal" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="input8">URL (Optional)</label>
+                            <input className="form-control col-sm-8" type="text" id="input8" name="assetURL" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="input9">Clawback Address (Optional)</label>
+                            <input className="form-control col-sm-8" type="text" id="input9" name="assetClawback" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="input10">Freeze Address (Optional)</label>
+                            <input className="form-control col-sm-8" type="text" id="input10" name="assetFreeze" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="input11">Manager Address (Optional)</label>
+                            <input className="form-control col-sm-8" type="text" id="input11" name="assetManager" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="input12">Reserve Address (Optional)</label>
+                            <input className="form-control col-sm-8" type="text" id="input12" name="assetReserve" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="input13">Note (optional)</label>
+                            <textarea className="form-control col-sm-8" id="input13" name="note" ref={register}></textarea>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="input14">Default Frozen (Optional)</label>
+                            <input className="form-control col-sm-8" type="checkbox" id="input14" name="assetDefaultFrozen" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="note">Note (optional)</label>
+                            <textarea className="form-control col-sm-8" id="note" name="note" ref={register}></textarea>
+                          </div>
+
+                          
+
+                        </>
+                      }
+
+                      {txType === 'asset transfer tx' && 
+                        <>
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="input15">Asset ID</label>
+                            <input className="form-control col-sm-8" type="number" id="input15" name="assetIndex" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="input16">To</label>
+                            <input className="form-control col-sm-8" type="text" id="input16" name="to" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="input17">Amount</label>
+                            <input className="form-control col-sm-8" type="number" id="input17" name="amount" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="input18">Revocation Target (optional)</label>
+                            <input className="form-control col-sm-8" type="text" id="input18" name="assetRevocationTarget" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="note">Note (optional)</label>
+                            <textarea className="form-control col-sm-8" id="innoteput3" name="note" ref={register}></textarea>
+                          </div>
+                          
+                        </>
+                      }
+
+                      {txType === 'asset freeze tx' && 
+                        <>
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="assetIndex">Asset ID</label>
+                            <input className="form-control col-sm-8" type="number" id="assetIndex" name="assetIndex" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="freezeAccount">Freeze Account</label>
+                            <input className="form-control col-sm-8" type="text" id="freezeAccount" name="freezeAccount" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="freezeState">Freeze State</label>
+                            <input className="form-control col-sm-8" type="checkbox" id="freezeState" name="freezeState" ref={register}/>
+                          </div>
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="note">Note (optional)</label>
+                            <textarea className="form-control col-sm-8" id="innoteput3" name="note" ref={register}></textarea>
+                          </div>
+                        </>
+                      }
+
+                      <button type="submit" className="btn btn-info btn-lg btn btn-block">SUBMIT</button>
+
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+
+              
+
+            
+          </>
+        }
+
+      </div>
+
+
+
+    </>
   );
 }
 

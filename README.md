@@ -1,46 +1,96 @@
-# Getting Started with Create React App
+# Wallet My Algo
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+* [Overview](#Overview)
+* [How does it work?](#How-does-it-work?)
+* [Installation](#Installation)
+* [API Usage](#API-Usage)
+  * [Connect to My Algo](#Connect-to-My-Algo)
+  * [Sign Transaction](#Sign-Transaction)
+* [Contributing](#Contributing)
+* [Copyright and License](#Copyright-and-License)
 
-## Available Scripts
+### Overview
 
-In the project directory, you can run:
+Wallet My Algo is a Javascript library developed by Rand Labs to securely sign transactions with [My Algo](https://wallet.myalgo.com)
 
-### `npm start`
+### How does it work?
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### Installation  
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+The library can be installed via npm:
+```sh
+npm install wallet-myalgo-js
+```
 
-### `npm test`
+### API Usage  
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+#### Connect to My Algo  
 
-### `npm run build`
+```js
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+import { MyAlgoWallet } from 'wallet-myalgo-js';
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+const myAlgoWallet = new MyAlgoWallet();
+// const myAlgoWallet = new MyAlgoWallet('https://dev.myalgo.com/bridge');
 
-### `npm run eject`
+const connectToMyAlgo = async() => {
+  try {
+    const accounts = await myAlgoWallet.connect();
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+    const addresses = accounts.map(account => account.address);
+    
+  } catch (err) {
+    console.error(err);
+  }
+}
+```
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+#### Sign Transaction
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+```js
 
-## Learn More
+import algosdk from 'algosdk';
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+const algodClient = new algosdk.Algodv2(algodToken, algodServer, algodPort);
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+
+(async () => {
+  try {
+
+    const from = addresses[0]; // Select address
+    const to: '...';
+    const amount = 1000000; // microalgos
+  
+    let txn = await algodClient.getTransactionParams().do();
+      
+    txn = {
+    ...txn,
+    fee: 1000,
+    flatFee: true,
+    type: 'pay',
+    from,
+    to,
+    amount
+    };
+  
+    let signedTxn = (await myAlgoWallet.signTransaction(txn));
+    console.log(signedTxn.txID);
+  
+    await algodClient.sendRawTransaction(signedTxn.blob).do();
+
+  
+  }catch(err) {
+    console.error(err); 
+  }
+})();
+
+```
+
+
+### Contributing  
+
+
+### Copyright and License  
+

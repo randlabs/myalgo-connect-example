@@ -77,8 +77,10 @@ function App() {
       from: selectedWallet,
       type: 'pay',
       amount: +formValue.amount*1000000,
-      note: formValue.note && algosdk.encodeObj(formValue.note)
+      // note: formValue.note && algosdk.encodeObj(formValue.note)
     };
+
+    if(txn.note) txn.note = new Uint8Array(Buffer.from(formValue.note));
 
     return txn;
   }
@@ -97,11 +99,13 @@ function App() {
       voteFirst: +formValue.voteFirst,
       voteLast: +formValue.voteLast,
       voteKeyDilution: +formValue.voteKeyDilution,
-      note: formValue.note && algosdk.encodeObj(formValue.note)
+      // note: formValue.note && algosdk.encodeObj(formValue.note)
     };
 
+    if(txn.note) txn.note = new Uint8Array(Buffer.from(formValue.note));
+
     return txn;
-  }
+  };
 
 
   const prepareAssetConfigTx = async(formValue) => {
@@ -118,25 +122,10 @@ function App() {
       assetTotal: +formValue.assetTotal,
       assetIndex: formValue.assetIndex && +formValue.assetIndex,
       // assetTotal: formValue.assetTotal*(10**formValue.assetDecimals),
-      note: formValue.note && algosdk.encodeObj(formValue.note)
+      // note: formValue.note && algosdk.encodeObj(formValue.note)
     };
 
-
-    // txn.fee = 1000;
-    // txn.flatFee = true;
-    // txn.from = selectedWallet;
-    
-    // txn.type = 'acfg';
-    // txn.assetDecimals = 2;
-    // txn.assetTotal = 500000*(10**txn.assetDecimals);
-    // txn.assetName = 'My New Coin';
-    // txn.assetUnitName = 'MNC';
-    // txn.assetURL = 'developer.algorand.org';
-    // txn.assetClawback = selectedWallet;
-    // txn.assetFreeze = selectedWallet;
-    // txn.assetManager = selectedWallet;
-    // txn.assetReserve = selectedWallet;
-    // txn.assetDefaultFrozen = false;
+    if(txn.note) txn.note = new Uint8Array(Buffer.from(formValue.note));
 
     return txn;
   }
@@ -154,8 +143,10 @@ function App() {
         type: 'axfer',
         amount: +formValue.amount,
         assetIndex: +formValue.assetIndex,
-        note: formValue.note && algosdk.encodeObj(formValue.note)
+        // note: formValue.note && algosdk.encodeObj(formValue.note)
     };
+
+    if(txn.note) txn.note = new Uint8Array(Buffer.from(formValue.note));
 
     return txn;
   }
@@ -172,8 +163,10 @@ function App() {
         from: selectedWallet,
         type: 'afrz',
         assetIndex: +formValue.assetIndex,
-        note: formValue.note && algosdk.encodeObj(formValue.note)
+        // note: formValue.note && algosdk.encodeObj(formValue.note)
     };
+
+    if(txn.note) txn.note = new Uint8Array(Buffer.from(formValue.note));
 
     return txn;
   }
@@ -290,7 +283,7 @@ function App() {
               <div className="row justify-content-center no-gutters">
                 <div className="col-6">
                   <div className="form-group row">
-                    <label className="col-sm-4" htmlFor="wallets-options">Select Account</label>
+                    <label className="col-sm-4" htmlFor="wallets-options">From</label>
                     <select className="form-control col-sm-8" name="wallets-options" id="wallets-options" value={selectedWallet} onChange={(e) => setSelectedWallet(e.target.value)}>
                       {wallets.map(wallet => (
                         <option key={wallet} value={wallet}>{wallet}</option>

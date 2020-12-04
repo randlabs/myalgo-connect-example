@@ -80,7 +80,7 @@ const algodClient = new algosdk.Algodv2(algodToken, algodServer, algodPort);
       from: addresses[0], // Selected address
       to:  '...',
       amount: 1000000, // microalgos
-      note: algosdk.encodeObj('Hello World')
+      note: new Uint8Array(Buffer.from('Hello World'))
     };
   
     let signedTxn = (await myAlgoWallet.signTransaction(txn));
@@ -237,7 +237,7 @@ const algodClient = new algosdk.Algodv2(algodToken, algodServer, algodPort);
       from: addresses[0], // Selected address
       to:  '...',
       amount: 1000000, //base units
-      note: algosdk.encodeObj('Hello World')
+      note: new Uint8Array(Buffer.from('Hello World'))
     };
   
     let signedTxn = (await myAlgoWallet.signTransaction(txn));
@@ -316,7 +316,7 @@ const algodClient = new algosdk.Algodv2(algodToken, algodServer, algodPort);
     from: addresses[0], // Selected address. Freeze address
     assetIndex: 123, //Asset ID
     freezeAccount:  '...', // Address to freeze
-    note: algosdk.encodeObj('Hello World'),
+    note: new Uint8Array(Buffer.from('Hello World')),
     freezeState: true //true to freeze false to unfreeze
     };
   

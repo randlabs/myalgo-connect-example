@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { MyAlgoWallet, SignedTx } from 'wallet-myalgo-js';
 import { useForm } from "react-hook-form";
-
-
 import algosdk from 'algosdk';
+import axios from 'axios';
 
 
 const algodClient = new algosdk.Algodv2('', 'https://api.testnet.algoexplorer.io', '');
@@ -68,9 +67,9 @@ function App() {
   const preparePaymentTx = async(formValue) => {
     // let myAccount = algosdk.mnemonicToSecretKey('escape auto cool oil spy trap decrease doctor carbon wet token analyst stand rebuild drum mouse response track novel demand discover step hire able tissue');
     // console.log('myAccount:', myAccount);
-      let txn = await algodClient.getTransactionParams().do();
-  
-      txn = {
+    let txn = await algodClient.getTransactionParams().do();
+
+    txn = {
       ...txn,
       ...formValue,
       fee: 1000,
@@ -78,7 +77,7 @@ function App() {
       from: selectedWallet,
       type: 'pay',
       amount: +formValue.amount*1000000,
-      note: undefined
+      note: formValue.note && algosdk.encodeObj(formValue.note)
     };
 
     return txn;
@@ -91,14 +90,14 @@ function App() {
     txn = {
       ...txn,
       ...formValue,
-        fee: 1000,
-        flatFee: true,
-        from: selectedWallet,
-        type: 'keyreg',
-        voteFirst: +formValue.voteFirst,
-        voteLast: +formValue.voteLast,
-        voteKeyDilution: +formValue.voteKeyDilution,
-        note: undefined
+      fee: 1000,
+      flatFee: true,
+      from: selectedWallet,
+      type: 'keyreg',
+      voteFirst: +formValue.voteFirst,
+      voteLast: +formValue.voteLast,
+      voteKeyDilution: +formValue.voteKeyDilution,
+      note: formValue.note && algosdk.encodeObj(formValue.note)
     };
 
     return txn;
@@ -111,14 +110,15 @@ function App() {
     txn = {
       ...txn,
       ...formValue,
-        fee: 1000,
-        flatFee: true,
-        from: selectedWallet,
-        type: 'acfg',
-        assetDecimals: +formValue.assetDecimals,
-        assetTotal: +formValue.assetTotal,
-        // assetTotal: formValue.assetTotal*(10**formValue.assetDecimals),
-        note: undefined
+      fee: 1000,
+      flatFee: true,
+      from: selectedWallet,
+      type: 'acfg',
+      assetDecimals: +formValue.assetDecimals,
+      assetTotal: +formValue.assetTotal,
+      assetIndex: formValue.assetIndex && +formValue.assetIndex,
+      // assetTotal: formValue.assetTotal*(10**formValue.assetDecimals),
+      note: formValue.note && algosdk.encodeObj(formValue.note)
     };
 
 
@@ -154,7 +154,7 @@ function App() {
         type: 'axfer',
         amount: +formValue.amount,
         assetIndex: +formValue.assetIndex,
-        note: undefined
+        note: formValue.note && algosdk.encodeObj(formValue.note)
     };
 
     return txn;
@@ -172,7 +172,7 @@ function App() {
         from: selectedWallet,
         type: 'afrz',
         assetIndex: +formValue.assetIndex,
-        note: undefined
+        note: formValue.note && algosdk.encodeObj(formValue.note)
     };
 
     return txn;
@@ -195,12 +195,38 @@ function App() {
       else if(txType === 'asset transfer tx') txn = await prepareAssetTransferTx(formValue);
       else if(txType === 'asset freeze tx') txn = await prepareAssetFreezeTx(formValue);
 
+      console.log('txn:', txn);
+
 
       // let txn = algosdk.makePaymentTxnWithSuggestedParams(selectedWallet, receiverAddress, (amount as number)*1000000, undefined, undefined, params);
       // console.log('txn:', txn);
     
 
-      let signedTxn = (await myAlgoWallet.signTransaction(txn)) as SignedTx;
+      let signedTxn: SignedTx;
+
+      if(formValue.tealSrc) {
+        const {result} = (await axios.post(
+          "https://api.algoexplorer.io/v2/teal/compile",
+          formValue.tealSrc,
+          {headers: {'Content-Type': 'Content-Type: text/plain'}})
+        ).data;
+        console.log(result);
+
+        const program = new Uint8Array(Buffer.from(result, 'base64'));
+        // const program = Uint8Array.from([1, 32, 1, 0, 34]);
+
+        const lsig = algosdk.makeLogicSig(program);
+
+        lsig.sig = await myAlgoWallet.signLogicSig(program, selectedWallet as string);
+
+        // create logic signed transaction.
+        signedTxn = algosdk.signLogicSigTransaction(txn, lsig);
+
+
+      } else {
+        signedTxn = (await myAlgoWallet.signTransaction(txn)) as SignedTx;
+      }
+
       // let signedTxn = txn.signTxn(myAccount.sk);
       // let signedTxn = (await algosdk.signTransaction(txn, myAccount.sk)).blob;
       console.log('signedTxn:', signedTxn);
@@ -211,7 +237,7 @@ function App() {
       const raw = await algodClient.sendRawTransaction(signedTxn.blob).do();
       console.log('raw:',raw);
 
-      waitForConfirmation(signedTxn.txID);
+      waitForConfirmation(raw.txId);
 
 
       
@@ -316,10 +342,29 @@ function App() {
                             <input className="form-control col-sm-8" type="number" id="input2" name="amount" ref={register}/>
                           </div>
 
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="closeRemainderTo">Close Remainder To (optional)</label>
+                            <input className="form-control col-sm-8" type="text" id="closeRemainderTo" name="closeRemainderTo" ref={register}/>
+                          </div>
 
                           <div className="form-group row">
-                            <label className="col-sm-4" htmlFor="input3">Note (optional)</label>
-                            <textarea className="form-control col-sm-8" id="input3" name="note" ref={register}></textarea>
+                            <label className="col-sm-4" htmlFor="reKeyTo">Rekey To (optional)</label>
+                            <input className="form-control col-sm-8" type="text" id="reKeyTo" name="reKeyTo" ref={register}/>
+                          </div>
+                          {/* 
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="signer">Signer (optional)</label>
+                            <input className="form-control col-sm-8" type="text" id="signer" name="signer" ref={register}/>
+                          </div> */}
+
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="signer">Signer (optional)</label>
+                            <select className="form-control col-sm-8" name="signer" id="signer" defaultValue={undefined} ref={register}>
+                              <option value={undefined}></option>
+                              {wallets.map(wallet => (
+                                <option key={wallet} value={wallet}>{wallet}</option>
+                              ))}
+                            </select>
                           </div>
                         </>
                       }
@@ -351,17 +396,15 @@ function App() {
                             <label className="col-sm-4" htmlFor="voteKeyDilution">Vote Key Dilution</label>
                             <input className="form-control col-sm-8" type="number" id="voteKeyDilution" name="voteKeyDilution" ref={register}/>
                           </div>
-
-                          <div className="form-group row">
-                            <label className="col-sm-4" htmlFor="note">Note (optional)</label>
-                            <textarea className="form-control col-sm-8" id="note" name="note" ref={register}></textarea>
-                          </div>
                         </>
-
                       }
 
                       {txType === 'asset config tx' && 
                         <>
+                          <div className="form-group row">
+                            <label className="col-sm-4" htmlFor="assetIndex">Asset ID</label>
+                            <input className="form-control col-sm-8" type="number" id="assetIndex" name="assetIndex" ref={register}/>
+                          </div>
 
                           <div className="form-group row">
                             <label className="col-sm-4" htmlFor="input4">Name</label>
@@ -409,22 +452,9 @@ function App() {
                           </div>
 
                           <div className="form-group row">
-                            <label className="col-sm-4" htmlFor="input13">Note (optional)</label>
-                            <textarea className="form-control col-sm-8" id="input13" name="note" ref={register}></textarea>
-                          </div>
-
-                          <div className="form-group row">
                             <label className="col-sm-4" htmlFor="input14">Default Frozen (Optional)</label>
                             <input className="form-control col-sm-8" type="checkbox" id="input14" name="assetDefaultFrozen" ref={register}/>
                           </div>
-
-                          <div className="form-group row">
-                            <label className="col-sm-4" htmlFor="note">Note (optional)</label>
-                            <textarea className="form-control col-sm-8" id="note" name="note" ref={register}></textarea>
-                          </div>
-
-                          
-
                         </>
                       }
 
@@ -451,10 +481,9 @@ function App() {
                           </div>
 
                           <div className="form-group row">
-                            <label className="col-sm-4" htmlFor="note">Note (optional)</label>
-                            <textarea className="form-control col-sm-8" id="innoteput3" name="note" ref={register}></textarea>
+                            <label className="col-sm-4" htmlFor="closeRemainderTo">Close Remainder To (optional)</label>
+                            <input className="form-control col-sm-8" type="text" id="closeRemainderTo" name="closeRemainderTo" ref={register}/>
                           </div>
-                          
                         </>
                       }
 
@@ -474,13 +503,19 @@ function App() {
                             <label className="col-sm-4" htmlFor="freezeState">Freeze State</label>
                             <input className="form-control col-sm-8" type="checkbox" id="freezeState" name="freezeState" ref={register}/>
                           </div>
-
-                          <div className="form-group row">
-                            <label className="col-sm-4" htmlFor="note">Note (optional)</label>
-                            <textarea className="form-control col-sm-8" id="innoteput3" name="note" ref={register}></textarea>
-                          </div>
                         </>
                       }
+
+                      
+                      <div className="form-group row">
+                        <label className="col-sm-4" htmlFor="note">Note (optional)</label>
+                        <textarea className="form-control col-sm-8" id="note" name="note" ref={register}></textarea>
+                      </div>
+
+                      <div className="form-group row">
+                        <label className="col-sm-4" htmlFor="tealSrc">TEAL source code (optional)</label>
+                        <textarea className="form-control col-sm-8" id="tealSrc" name="tealSrc" ref={register}></textarea>
+                      </div>
 
                       <button type="submit" className="btn btn-info btn-lg btn btn-block">SUBMIT</button>
 

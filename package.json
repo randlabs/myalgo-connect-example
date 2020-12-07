@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@randlabs/wallet-myalgo-js": "^1.0.1",
     "@testing-library/jest-dom": "^5.11.6",
     "@testing-library/react": "^11.1.2",
     "@testing-library/user-event": "^12.2.2",
@@ -18,7 +19,6 @@
     "react-hook-form": "^6.11.5",
     "react-scripts": "4.0.0",
     "typescript": "^4.0.5",
-    "wallet-myalgo-js": "git+ssh://git@github.com/randlabs/wallet-myalgo-js.git#develop",
     "web-vitals": "^0.2.4"
   },
   "scripts": {

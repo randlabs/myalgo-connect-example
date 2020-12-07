@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MyAlgoWallet, SignedTx } from 'wallet-myalgo-js';
+import { MyAlgoWallet, SignedTx } from '@randlabs/wallet-myalgo-js';
 import { useForm } from "react-hook-form";
 import algosdk from 'algosdk';
 import axios from 'axios';

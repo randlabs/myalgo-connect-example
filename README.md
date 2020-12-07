@@ -77,7 +77,7 @@ const algodClient = new algosdk.Algodv2(algodToken, algodServer, algodPort);
       note: new Uint8Array(Buffer.from('Hello World'))
     };
   
-    let signedTxn = (await myAlgoWallet.signTransaction(txn));
+    let signedTxn = await myAlgoWallet.signTransaction(txn);
     console.log(signedTxn.txID);
   
     await algodClient.sendRawTransaction(signedTxn.blob).do();
@@ -116,7 +116,7 @@ const algodClient = new algosdk.Algodv2(algodToken, algodServer, algodPort);
       closeRemainderTo: '...' // closeTo address
     };
   
-    let signedTxn = (await myAlgoWallet.signTransaction(txn));
+    let signedTxn = await myAlgoWallet.signTransaction(txn);
     console.log(signedTxn.txID);
   
     await algodClient.sendRawTransaction(signedTxn.blob).do();
@@ -155,7 +155,7 @@ const algodClient = new algosdk.Algodv2(algodToken, algodServer, algodPort);
       reKeyTo: '...' //Authorized address for signing
     };
   
-    let signedTxn = (await myAlgoWallet.signTransaction(txn));
+    let signedTxn = await myAlgoWallet.signTransaction(txn);
     console.log(signedTxn.txID);
   
     await algodClient.sendRawTransaction(signedTxn.blob).do();
@@ -194,7 +194,7 @@ const algodClient = new algosdk.Algodv2(algodToken, algodServer, algodPort);
       signer: addresses[0] // Authorized adresses for signing
     };
   
-    let signedTxn = (await myAlgoWallet.signTransaction(txn));
+    let signedTxn = await myAlgoWallet.signTransaction(txn);
     console.log(signedTxn.txID);
   
     await algodClient.sendRawTransaction(signedTxn.blob).do();
@@ -234,7 +234,7 @@ const algodClient = new algosdk.Algodv2(algodToken, algodServer, algodPort);
       note: new Uint8Array(Buffer.from('Hello World'))
     };
   
-    let signedTxn = (await myAlgoWallet.signTransaction(txn));
+    let signedTxn = await myAlgoWallet.signTransaction(txn);
     console.log(signedTxn.txID);
   
     await algodClient.sendRawTransaction(signedTxn.blob).do();
@@ -274,7 +274,7 @@ const algodClient = new algosdk.Algodv2(algodToken, algodServer, algodPort);
       closeRemainderTo: '...'
     };
   
-    let signedTxn = (await myAlgoWallet.signTransaction(txn));
+    let signedTxn = await myAlgoWallet.signTransaction(txn);
     console.log(signedTxn.txID);
   
     await algodClient.sendRawTransaction(signedTxn.blob).do();
@@ -314,7 +314,7 @@ const algodClient = new algosdk.Algodv2(algodToken, algodServer, algodPort);
       freezeState: true
     };
   
-    let signedTxn = (await myAlgoWallet.signTransaction(txn));
+    let signedTxn = await myAlgoWallet.signTransaction(txn);
     console.log(signedTxn.txID);
   
     await algodClient.sendRawTransaction(signedTxn.blob).do();
@@ -353,13 +353,13 @@ const algodClient = new algosdk.Algodv2(algodToken, algodServer, algodPort);
       assetDecimals: 2,
       assetTotal: 50000000,
       assetURL: 'developer.algorand.org',
-      assetFreeze: '...'
-      assetManager: '...'
+      assetFreeze: '...',
+      assetManager: '...',
       assetReserve: '...',
       assetDefaultFrozen: false
     };
   
-    let signedTxn = (await myAlgoWallet.signTransaction(txn));
+    let signedTxn = await myAlgoWallet.signTransaction(txn);
     console.log(signedTxn.txID);
   
     await algodClient.sendRawTransaction(signedTxn.blob).do();
@@ -394,12 +394,12 @@ const algodClient = new algosdk.Algodv2(algodToken, algodServer, algodPort);
       type: 'acfg',
       from: addresses[0],
       assetIndex: 123,
-      assetFreeze: '...'
-      assetManager: '...'
+      assetFreeze: '...',
+      assetManager: '...',
       assetReserve: '...',
     };
   
-    let signedTxn = (await myAlgoWallet.signTransaction(txn));
+    let signedTxn = await myAlgoWallet.signTransaction(txn);
     console.log(signedTxn.txID);
   
     await algodClient.sendRawTransaction(signedTxn.blob).do();
@@ -436,7 +436,7 @@ const algodClient = new algosdk.Algodv2(algodToken, algodServer, algodPort);
       assetIndex: 123,
     };
   
-    let signedTxn = (await myAlgoWallet.signTransaction(txn));
+    let signedTxn = await myAlgoWallet.signTransaction(txn);
     console.log(signedTxn.txID);
   
     await algodClient.sendRawTransaction(signedTxn.blob).do();
@@ -477,7 +477,7 @@ const algodClient = new algosdk.Algodv2(algodToken, algodServer, algodPort);
       voteKeyDilution: 1730,
     };
   
-    let signedTxn = (await myAlgoWallet.signTransaction(txn));
+    let signedTxn = await myAlgoWallet.signTransaction(txn);
     console.log(signedTxn.txID);
   
     await algodClient.sendRawTransaction(signedTxn.blob).do();

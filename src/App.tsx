@@ -30,10 +30,14 @@ function App() {
   const [balance, setBalance] = useState<number>();
   const [txType, setTxType] = useState<'payment tx' | 'key reg tx' | 'asset config tx' | 'asset transfer tx' | 'asset freeze tx'>('payment tx');
 
+  const [isTxArray, setIsTxArray] = useState(false);
+  const [totalTxArrayEl, setTotalTxArrayEl] = useState(2);
 
 
   useEffect(() => {
     (async () => {
+
+      if(!selectedWallet) return;
 
       let accountInfo = await algodClient.accountInformation(selectedWallet).do();
       console.log(accountInfo);
@@ -195,7 +199,7 @@ function App() {
       // console.log('txn:', txn);
     
 
-      let signedTxn: SignedTx;
+      let signedTxn: SignedTx | SignedTx[];
 
       if(formValue.tealSrc) {
         const {result} = (await axios.post(
@@ -217,7 +221,28 @@ function App() {
 
 
       } else {
-        signedTxn = (await myAlgoWallet.signTransaction(txn)) as SignedTx;
+        console.log('isTxArray:', isTxArray);
+
+        let txArr = [] as any;
+        for(let i = 0; i< totalTxArrayEl; i++) {
+          txArr.push({...txn, firstRound: txn.firstRound + i});
+        }
+
+        console.log(txArr);
+
+
+
+        signedTxn = (await myAlgoWallet.signTransaction( 
+          isTxArray? 
+          txArr
+          //  .map((t, i) => {t['firstRound'] = t['firstRound']-i; return t} ) 
+           :
+           txn)
+        );
+
+        (signedTxn as SignedTx[]).forEach(st => {
+          console.log(algosdk.decodeObj(st.blob));
+        });
       }
 
       // let signedTxn = txn.signTxn(myAccount.sk);
@@ -227,10 +252,20 @@ function App() {
       // let txId = txn.txID().toString();
       // console.log("Signed transaction with txID: %s", txId);
 
-      const raw = await algodClient.sendRawTransaction(signedTxn.blob).do();
-      console.log('raw:',raw);
 
-      waitForConfirmation(raw.txId);
+
+      if(isTxArray) {
+
+        const raw = await algodClient.sendRawTransaction((signedTxn as SignedTx[]).map(s => s.blob)).do();
+        console.log('raw:',raw);
+
+      } else {
+        const raw = await algodClient.sendRawTransaction((signedTxn as SignedTx).blob).do();
+        console.log('raw:',raw);
+  
+        waitForConfirmation(raw.txId);
+      }
+
 
 
       
@@ -315,6 +350,22 @@ function App() {
                     ))}
                   </select>
                 </div>
+              </div>
+            </div>
+
+            <div className="row justify-content-center no-gutters">
+              <div className="col-6">
+                <div className="form-group row">
+                  <label className="col-sm-4" htmlFor="tx-options">Transaction Array</label>
+                  <input className="form-control col-sm-8" type="checkbox" id="txArray" checked={isTxArray} onChange={e => setIsTxArray(e.target.checked)} />
+                </div>
+
+                {isTxArray && 
+                  <div className="form-group row">
+                    <label className="col-sm-4" htmlFor="input2">Total Elements</label>
+                    <input className="form-control col-sm-8" min={2} type="number" id="txArrayTotal" value={totalTxArrayEl} onChange={e => setTotalTxArrayEl(+e.target.value)} />
+                  </div>
+                }
               </div>
             </div>
               

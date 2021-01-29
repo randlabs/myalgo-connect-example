@@ -6,7 +6,8 @@ import axios from 'axios';
 
 
 const algodClient = new algosdk.Algodv2('', 'https://api.testnet.algoexplorer.io', '');
-const myAlgoWallet = new MyAlgoWallet('https://dev.myalgo.com/bridge');
+const myAlgoWallet = new MyAlgoWallet('https://wallet.localhost.com:3000');
+// const myAlgoWallet = new MyAlgoWallet('https://dev.myalgo.com/bridge');
 
 
 
@@ -224,48 +225,43 @@ function App() {
         console.log('isTxArray:', isTxArray);
 
         let txArr = [] as any;
-        for(let i = 0; i< totalTxArrayEl; i++) {
-          txArr.push({...txn, firstRound: txn.firstRound + i});
+
+        if(isTxArray) {
+          for(let i = 0; i< totalTxArrayEl; i++) {
+            txArr.push({...txn, firstRound: txn.firstRound + i});
+          }
+  
+          console.log(txArr);
         }
 
-        console.log(txArr);
+        signedTxn = (await myAlgoWallet.signTransaction(isTxArray? txArr : txn));
 
-
-
-        signedTxn = (await myAlgoWallet.signTransaction( 
-          isTxArray? 
-          txArr
-          //  .map((t, i) => {t['firstRound'] = t['firstRound']-i; return t} ) 
-           :
-           txn)
-        );
-
-        (signedTxn as SignedTx[]).forEach(st => {
-          console.log(algosdk.decodeObj(st.blob));
-        });
       }
-
+      
       // let signedTxn = txn.signTxn(myAccount.sk);
       // let signedTxn = (await algosdk.signTransaction(txn, myAccount.sk)).blob;
       console.log('signedTxn:', signedTxn);
-
+      
       // let txId = txn.txID().toString();
       // console.log("Signed transaction with txID: %s", txId);
-
-
+      
+      
+      let raw: any;
 
       if(isTxArray) {
+        (signedTxn as SignedTx[]).forEach(st => {
+          console.log(algosdk.decodeObj(st.blob));
+        });
 
-        const raw = await algodClient.sendRawTransaction((signedTxn as SignedTx[]).map(s => s.blob)).do();
-        console.log('raw:',raw);
+        raw = await algodClient.sendRawTransaction((signedTxn as SignedTx[]).map(s => s.blob)).do();
 
       } else {
-        const raw = await algodClient.sendRawTransaction((signedTxn as SignedTx).blob).do();
-        console.log('raw:',raw);
-  
-        waitForConfirmation(raw.txId);
+        raw = await algodClient.sendRawTransaction((signedTxn as SignedTx).blob).do();
+        
       }
-
+      
+      console.log('raw:',raw);
+      waitForConfirmation(raw.txId);
 
 
       
@@ -329,7 +325,7 @@ function App() {
               </div>
 
 
-            {balance && 
+            {!!balance && 
               <div className="row justify-content-center no-gutters mt-3">
                 <div className="col-6">
                     <h3>Balance: {balance/1000000} Algos</h3>

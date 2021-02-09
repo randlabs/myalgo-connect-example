@@ -6,8 +6,8 @@ import axios from 'axios';
 
 
 const algodClient = new algosdk.Algodv2('', 'https://api.testnet.algoexplorer.io', '');
-// const myAlgoWallet = new MyAlgoWallet('https://wallet.localhost.com:3000');
-const myAlgoWallet = new MyAlgoWallet('https://dev.myalgo.com/bridge');
+const myAlgoWallet = new MyAlgoWallet('https://wallet.localhost.com:3000');
+// const myAlgoWallet = new MyAlgoWallet('https://dev.myalgo.com/bridge');
 
 
 

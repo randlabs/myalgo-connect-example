@@ -227,9 +227,15 @@ function App() {
 
         if(isTxArray) {
           for(let i = 0; i< totalTxArrayEl; i++) {
-            txArr.push({...txn, firstRound: txn.firstRound + i});
+            txArr.push({...txn, firstRound: txn.firstRound + i });
           }
-  
+
+          const groupID = algosdk.computeGroupID(txArr)
+
+          for (let i = 0; i < totalTxArrayEl; i++) {
+            txArr[i].group = groupID.toString("base64");
+          }
+
           console.log(txArr);
         }
 

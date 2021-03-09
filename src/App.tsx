@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MyAlgoWallet, SignedTx } from '@randlabs/wallet-myalgo-js';
+import MyAlgoWallet, { SignedTx } from '@randlabs/myalgo-connect';
 import { useForm } from "react-hook-form";
 import algosdk from 'algosdk';
 import axios from 'axios';
@@ -233,7 +233,7 @@ function App() {
           const groupID = algosdk.computeGroupID(txArr)
 
           for (let i = 0; i < totalTxArrayEl; i++) {
-            txArr[i].group = groupID.toString("base64");
+            txArr[i].group = groupID;
           }
 
           console.log(txArr);

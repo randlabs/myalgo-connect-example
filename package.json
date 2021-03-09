@@ -2,7 +2,7 @@
   "name": "wallet-myalgo-test",
   "version": "0.1.1",
   "dependencies": {
-    "@randlabs/wallet-myalgo-js": "1.0.2",
+    "@randlabs/myalgo-connect": "^1.0.1",
     "@testing-library/jest-dom": "5.11.9",
     "@testing-library/react": "11.2.5",
     "@testing-library/user-event": "12.6.3",

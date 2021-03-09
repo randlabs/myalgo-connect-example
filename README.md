@@ -1,4 +1,4 @@
-# Wallet My Algo
+# MyAlgo Connect
 
 * [Overview](#Overview)
 * [Installation](#Installation)
@@ -20,13 +20,13 @@
 
 ### Overview
 
-Wallet My Algo is a Javascript library developed by Rand Labs to securely sign transactions with [My Algo](https://wallet.myalgo.com)
+MyAlgo Connect is a Javascript library developed by Rand Labs to securely sign transactions with [My Algo](https://wallet.myalgo.com)
 
 ### Installation  
 
 The library can be installed via npm:
 ```sh
-npm install @randlabs/wallet-myalgo-js
+npm install @randlabs/myalgo-connect
 ```
 
 ### API Usage  
@@ -35,10 +35,10 @@ npm install @randlabs/wallet-myalgo-js
 
 ```js
 
-import { MyAlgoWallet } from '@randlabs/wallet-myalgo-js';
+import MyAlgo from '@randlabs/myalgo-connect';
 
 
-const myAlgoWallet = new MyAlgoWallet();
+const myAlgoWallet = new MyAlgo();
 
 const connectToMyAlgo = async() => {
   try {
